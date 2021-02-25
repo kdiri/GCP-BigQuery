@@ -226,17 +226,18 @@ with from_item_a as (
     select 'Madrid', 'Madridas'
 ),
 
-     from_item_b as (
-         select 'OR' as state, 'USA' as country
-         union all
-         select 'Ile-de-France', 'France'
-         union all
-         select 'Madridas', 'Spain'
-     )
+from_item_b as (
+     select 'OR' as state, 'USA' as country
+     union all
+     select 'Ile-de-France', 'France'
+     union all
+     select 'Madridas', 'Spain'
+)
 
 select from_item_a.*, country
 from from_item_a
          join from_item_b on from_item_a.state = from_item_b.state
+;
 
 
 -- [
@@ -256,3 +257,76 @@ from from_item_a
 --     "country": "Spain"
 --   }
 -- ]
+
+
+-- An interesting join type
+
+select from_item_a.*, country
+from from_item_a
+         join from_item_b on from_item_a.state != from_item_b.state
+;
+
+-- city	    state	        country
+-- Portland	OR	            France
+-- Portland	OR	            Spain
+-- Paris	Ile-de-France	USA
+-- Paris	Ile-de-France	Spain
+-- Madrid	Madridas	    USA
+-- Madrid	Madridas	    France
+
+
+-- Basic Join
+
+with winners as (
+    select 'John' as person, '100m' as event
+    union all select 'Luc', '200m'
+    union all select 'Joe', '400m'
+),
+gifts as (
+    select 'Iphone' as gift, '100m' as event
+    union all select 'Samsung', '200m'
+    union all select 'Huawei', '400m'
+)
+select winners.*, gifts.gift
+from winners join gifts on gifts.event = winners.event
+
+-- person	event	gift
+-- John	    100m	Iphone
+-- Luc	    200m	Samsung
+-- Joe	    400m	Huawei
+
+
+-- Cross Join (on cluse can not be used) => Comma cross join
+
+with winners as (
+    select 'John' as person, '100m' as event
+    union all select 'Luc', '200m'
+    union all select 'Joe', '400m'
+),
+gifts as (
+    select 'Iphone' as gift, '100m' as event
+    union all select 'Samsung', '200m'
+    union all select 'Huawei', '400m'
+)
+select winners.*, gifts.gift
+from winners cross join gifts
+;
+
+-- Can be also written as:
+
+select winners.*, gifts.gift
+from winners, gifts
+;
+
+-- person	event	gift
+-- John	    100m	Iphone
+-- John	    100m	Samsung
+-- John	    100m	Huawei
+-- Luc	    200m	Iphone
+-- Luc	    200m	Samsung
+-- Luc	    200m	Huawei
+-- Joe	    400m	Iphone
+-- Joe	    400m	Samsung
+-- Joe	    400m	Huawei
+
+
