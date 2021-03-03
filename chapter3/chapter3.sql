@@ -208,3 +208,96 @@ from (
 -- 2021-03-02 07:30:00.450 UTC	2021-03-02 07:30:00.450 UTC	 0
 
 
+-- Some string operations
+SELECT
+  ENDS_WITH('Hello', 'o') -- true
+  , ENDS_WITH('Hello', 'h') -- false
+  , STARTS_WITH('Hello', 'h') -- false
+  , STRPOS('Hello', 'e') -- 2
+  , STRPOS('Hello', 'f') -- 0 for not-found
+  , SUBSTR('Hello', 2, 4) -- 1-based
+  , CONCAT('Hello', 'World')
+;
+
+-- f0_	f1_	    f2_	    f3_	 f4_	f5_	    f6_
+-- true	false	false	2	 0	    ello	HelloWorld
+
+
+-- More str operations
+SELECT
+  LPAD('Hello', 10, '*') -- left pad with *
+  , RPAD('Hello', 10, '*') -- right pad
+  , LPAD('Hello', 10) -- left pad with spaces
+  , LTRIM('   Hello   ') -- trim whitespace on left
+  , RTRIM('   Hello   ') -- trim whitespace on right
+  , TRIM ('   Hello   ') -- trim whitespace both ends
+  , TRIM ('***Hello***', '*') -- trim * both ends
+  , REVERSE('Hello') -- reverse the string ;
+;
+
+-- f0_	        f1_	             f2_	f3_	           f4_	    f5_	    f6_	    f7_
+-- *****Hello	Hello*****	     Hello	Hello   	   Hello	Hello	Hello	olleH
+
+
+-- REGEX
+SELECT
+  column
+  , REGEXP_CONTAINS(column, r'\d{5}(?:[-\s]\d{4})?') has_zipcode
+  , REGEXP_CONTAINS(column, r'^\d{5}(?:[-\s]\d{4})?$') is_zipcode
+  , REGEXP_EXTRACT(column, r'\d{5}(?:[-\s]\d{4})?') the_zipcode
+  , REGEXP_EXTRACT_ALL(column, r'\d{5}(?:[-\s]\d{4})?') all_zipcodes
+  , REGEXP_REPLACE(column, r'\d{5}(?:[-\s]\d{4})?', '*****') masked
+FROM (
+  SELECT * from unnest([
+     '12345', '1234', '12345-9876',
+     'abc 12345 def', 'abcde-fghi',
+     '12345 ab 34567', '12345 9876'
+  ]) AS column
+);
+
+
+-- Parse Times
+SELECT
+  fmt, input, zone
+  , PARSE_TIMESTAMP(fmt, input, zone) AS ts
+FROM (
+  SELECT '%Y%m%d-%H%M%S' AS fmt, '20210303-220800' AS input, '+0' as zone
+  UNION ALL SELECT '%c', 'Wed Mar 03 21:26:00 2018', 'Europe/Paris'
+  UNION ALL SELECT '%x %X', '04/03/21 22:08:00', 'CET'
+)
+
+-- fmt	            input	                     zone	        ts
+-- %Y%m%d-%H%M%S	20210303-220800	             +0	            2021-03-03 22:08:00 UTC
+-- %c	            Wed Mar 03 21:26:00 2018	 Europe/Paris	2018-03-03 20:26:00 UTC
+-- %x %X	        04/03/21 22:08:00	         CET	        2021-04-03 20:08:00 UTC
+
+
+-- Format timestamps
+SELECT
+  ts, fmt
+  , FORMAT_TIMESTAMP(fmt, ts, '+1') AS ts_output -- +1 to get the results in CET
+FROM (
+  SELECT CURRENT_TIMESTAMP() AS ts, '%Y%m%d-%H%M%S' AS fmt
+  UNION ALL SELECT CURRENT_TIMESTAMP() AS ts, '%c' AS fmt
+  UNION ALL SELECT CURRENT_TIMESTAMP() AS ts, '%x %X' AS fmt
+)
+
+-- ts	                            fmt	            ts_output
+-- 2021-03-03 08:29:50.261608 UTC	%Y%m%d-%H%M%S	20210303-092950
+-- 2021-03-03 08:29:50.261608 UTC	%c	            Wed Mar  3 09:29:50 2021
+-- 2021-03-03 08:29:50.261608 UTC	%x %X	        03/03/21 09:29:50
+
+
+-- Extracting calendar parts
+select
+    ts
+    , format_timestamp('%c', ts) as repr
+    , extract(DAYOFWEEK from ts) as dayofweek
+    , extract(YEAR from ts) as year
+    , extract(WEEK from ts) as week
+from (
+    select parse_timestamp('%Y%m%d-%H%M%S', '20210303-093000') as ts
+)
+-- Sunday is the first day of the week by default
+-- ts	                    repr	                    dayofweek	year	week
+-- 2021-03-03 09:30:00 UTC	Wed Mar  3 09:30:00 2021	4	        2021	9
